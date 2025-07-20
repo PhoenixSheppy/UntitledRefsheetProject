@@ -1,2 +1,5 @@
 // Color conversion utilities
 export * from './colorConversion';
+
+// Color extraction utilities
+export * from './colorExtraction';

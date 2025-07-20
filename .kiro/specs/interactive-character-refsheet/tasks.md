@@ -51,7 +51,12 @@
   - Write component tests for loading states and error scenarios
   - _Requirements: 1.1, 1.2, 1.4_
 
-- [ ] 5. Develop color extraction utilities using HTML5 Canvas
+- [x] 5. Develop color extraction utilities using HTML5 Canvas
+
+
+
+
+
   - Implement extractColorFromImage function using canvas pixel data
   - Create canvas utility for loading images and extracting pixel colors
   - Add error handling for canvas operations and invalid coordinates
