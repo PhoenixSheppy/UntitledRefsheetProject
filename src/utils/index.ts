@@ -3,3 +3,6 @@ export * from './colorConversion';
 
 // Color extraction utilities
 export * from './colorExtraction';
+
+// Positioning utilities
+export * from './positioning';
