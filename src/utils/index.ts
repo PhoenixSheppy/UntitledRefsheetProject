@@ -6,3 +6,6 @@ export * from './colorExtraction';
 
 // Positioning utilities
 export * from './positioning';
+
+// Configuration utilities
+export * from './config';
