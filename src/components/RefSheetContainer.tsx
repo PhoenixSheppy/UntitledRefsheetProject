@@ -3,6 +3,7 @@
 import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import { ColorSegment, ImageDimensions, PanelPosition, SegmentBounds } from '@/types';
 import { calculatePanelPosition, segmentToSegmentBounds, getResponsivePanelDimensions } from '@/utils/positioning';
+import { debounce, throttle, announceToScreenReader } from '@/utils';
 import RefSheetImage from './RefSheetImage';
 import ColorSegmentOverlay from './ColorSegmentOverlay';
 import ColorInfoPanel from './ColorInfoPanel';
@@ -78,16 +79,20 @@ export const RefSheetContainer: React.FC<RefSheetContainerProps> = ({
     }
   }, []);
 
-  // Handle window resize
-  useEffect(() => {
-    const handleResize = () => {
+  // Throttled resize handler for better performance
+  const throttledResize = useMemo(
+    () => throttle(() => {
       updateDisplayDimensions();
       updateContainerDimensions();
-    };
+    }, 100),
+    [updateDisplayDimensions, updateContainerDimensions]
+  );
 
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, [updateDisplayDimensions, updateContainerDimensions]);
+  // Handle window resize
+  useEffect(() => {
+    window.addEventListener('resize', throttledResize);
+    return () => window.removeEventListener('resize', throttledResize);
+  }, [throttledResize]);
 
   // Update dimensions when image loads or container changes
   useEffect(() => {
@@ -113,32 +118,46 @@ export const RefSheetContainer: React.FC<RefSheetContainerProps> = ({
     return () => window.removeEventListener('resize', checkIsMobile);
   }, []);
 
+  // Debounced hover handler for smooth interactions
+  const debouncedHover = useMemo(
+    () => debounce((segment: ColorSegment | null) => {
+      if (!isMobile) {
+        setActiveSegment(segment);
+        
+        if (segment && displayDimensions) {
+          // Calculate segment bounds in display coordinates
+          const segmentBounds: SegmentBounds = {
+            x: (segment.coordinates.x / 100) * displayDimensions.width,
+            y: (segment.coordinates.y / 100) * displayDimensions.height,
+            width: (segment.dimensions.width / 100) * displayDimensions.width,
+            height: (segment.dimensions.height / 100) * displayDimensions.height,
+          };
+          
+          // Calculate panel position
+          const position = calculatePanelPosition(
+            segmentBounds,
+            containerDimensions,
+            preferredPanelSide,
+            isMobile
+          );
+          
+          setPanelPosition(position);
+          
+          // Announce color information to screen readers
+          announceToScreenReader(
+            `Color ${segment.name}: ${segment.colorInfo.hex}`,
+            'polite'
+          );
+        }
+      }
+    }, 50),
+    [displayDimensions, containerDimensions, preferredPanelSide, isMobile]
+  );
+
   // Handle segment hover (for desktop)
   const handleSegmentHover = useCallback((segment: ColorSegment | null) => {
-    if (!isMobile) {
-      setActiveSegment(segment);
-      
-      if (segment && displayDimensions) {
-        // Calculate segment bounds in display coordinates
-        const segmentBounds: SegmentBounds = {
-          x: (segment.coordinates.x / 100) * displayDimensions.width,
-          y: (segment.coordinates.y / 100) * displayDimensions.height,
-          width: (segment.dimensions.width / 100) * displayDimensions.width,
-          height: (segment.dimensions.height / 100) * displayDimensions.height,
-        };
-        
-        // Calculate panel position
-        const position = calculatePanelPosition(
-          segmentBounds,
-          containerDimensions,
-          preferredPanelSide,
-          isMobile
-        );
-        
-        setPanelPosition(position);
-      }
-    }
-  }, [displayDimensions, containerDimensions, preferredPanelSide, isMobile]);
+    debouncedHover(segment);
+  }, [debouncedHover]);
 
   // Handle segment touch (for mobile)
   const handleSegmentTouch = useCallback((segment: ColorSegment | null) => {

@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useEffect, useRef } from 'react';
 import { ColorInfo, PanelPosition } from '@/types';
+import { generateUniqueId, ReducedMotion } from '@/utils';
 
 export interface ColorInfoPanelProps {
   colorInfo: ColorInfo | null;
@@ -22,6 +23,8 @@ export const ColorInfoPanel: React.FC<ColorInfoPanelProps> = ({
 }) => {
   // Detect mobile device
   const [isMobile, setIsMobile] = React.useState(false);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const panelId = useMemo(() => generateUniqueId('color-info-panel'), []);
 
   React.useEffect(() => {
     const checkIsMobile = () => {
@@ -36,12 +39,14 @@ export const ColorInfoPanel: React.FC<ColorInfoPanelProps> = ({
     return () => window.removeEventListener('resize', checkIsMobile);
   }, []);
 
-  // Calculate panel styles based on position and visibility
+  // Calculate panel styles based on position and visibility with reduced motion support
   const panelStyles = useMemo(() => {
+    const animationDuration = ReducedMotion.getAnimationDuration(300);
+    
     const baseStyles = {
       position: 'absolute' as const,
       zIndex: 50,
-      transition: 'all 0.3s ease-in-out',
+      transition: animationDuration > 0 ? `all ${animationDuration}ms ease-in-out` : 'none',
       transform: isVisible ? 'scale(1)' : 'scale(0.95)',
       opacity: isVisible ? 1 : 0,
       pointerEvents: isVisible ? 'auto' as const : 'none' as const,
@@ -56,6 +61,17 @@ export const ColorInfoPanel: React.FC<ColorInfoPanelProps> = ({
     return { ...baseStyles, ...positionStyles };
   }, [position, isVisible]);
 
+  // Focus management for accessibility
+  useEffect(() => {
+    if (isVisible && panelRef.current && !isMobile) {
+      // Set focus to panel when it becomes visible for keyboard users
+      const timer = setTimeout(() => {
+        panelRef.current?.focus();
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [isVisible, isMobile]);
+
   // Don't render if no color info is provided
   if (!colorInfo) {
     return null;
@@ -63,6 +79,8 @@ export const ColorInfoPanel: React.FC<ColorInfoPanelProps> = ({
 
   return (
     <div
+      ref={panelRef}
+      id={panelId}
       className={`bg-white border border-gray-200 rounded-lg shadow-lg ${
         isMobile 
           ? 'p-3 min-w-40 text-sm' 
@@ -72,6 +90,8 @@ export const ColorInfoPanel: React.FC<ColorInfoPanelProps> = ({
       data-testid="color-info-panel"
       role="tooltip"
       aria-live="polite"
+      aria-label={`Color information for ${colorInfo.name || 'selected color'}`}
+      tabIndex={-1}
     >
       {/* Color swatch preview */}
       <div className="flex items-center gap-3 mb-3">
