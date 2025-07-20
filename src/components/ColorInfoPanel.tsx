@@ -20,6 +20,22 @@ export const ColorInfoPanel: React.FC<ColorInfoPanelProps> = ({
   isVisible,
   className = '',
 }) => {
+  // Detect mobile device
+  const [isMobile, setIsMobile] = React.useState(false);
+
+  React.useEffect(() => {
+    const checkIsMobile = () => {
+      const hasTouchScreen = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+      const isSmallScreen = window.innerWidth < 768; // md breakpoint
+      setIsMobile(hasTouchScreen && isSmallScreen);
+    };
+
+    checkIsMobile();
+    window.addEventListener('resize', checkIsMobile);
+    
+    return () => window.removeEventListener('resize', checkIsMobile);
+  }, []);
+
   // Calculate panel styles based on position and visibility
   const panelStyles = useMemo(() => {
     const baseStyles = {
@@ -47,7 +63,11 @@ export const ColorInfoPanel: React.FC<ColorInfoPanelProps> = ({
 
   return (
     <div
-      className={`bg-white border border-gray-200 rounded-lg shadow-lg p-4 min-w-48 ${className}`}
+      className={`bg-white border border-gray-200 rounded-lg shadow-lg ${
+        isMobile 
+          ? 'p-3 min-w-40 text-sm' 
+          : 'p-4 min-w-48'
+      } ${className}`}
       style={panelStyles}
       data-testid="color-info-panel"
       role="tooltip"
@@ -69,14 +89,18 @@ export const ColorInfoPanel: React.FC<ColorInfoPanelProps> = ({
       </div>
 
       {/* Color values */}
-      <div className="space-y-2">
+      <div className={isMobile ? 'space-y-1.5' : 'space-y-2'}>
         {/* Hex value */}
         <div className="flex justify-between items-center">
-          <span className="text-xs font-medium text-gray-600 uppercase tracking-wide">
+          <span className={`font-medium text-gray-600 uppercase tracking-wide ${
+            isMobile ? 'text-xs' : 'text-xs'
+          }`}>
             HEX
           </span>
           <code 
-            className="text-sm font-mono bg-gray-100 px-2 py-1 rounded text-gray-900"
+            className={`font-mono bg-gray-100 px-2 py-1 rounded text-gray-900 ${
+              isMobile ? 'text-xs' : 'text-sm'
+            }`}
             data-testid="hex-value"
           >
             {colorInfo.hex}
@@ -85,11 +109,15 @@ export const ColorInfoPanel: React.FC<ColorInfoPanelProps> = ({
 
         {/* RGB values */}
         <div className="flex justify-between items-center">
-          <span className="text-xs font-medium text-gray-600 uppercase tracking-wide">
+          <span className={`font-medium text-gray-600 uppercase tracking-wide ${
+            isMobile ? 'text-xs' : 'text-xs'
+          }`}>
             RGB
           </span>
           <code 
-            className="text-sm font-mono bg-gray-100 px-2 py-1 rounded text-gray-900"
+            className={`font-mono bg-gray-100 px-2 py-1 rounded text-gray-900 ${
+              isMobile ? 'text-xs' : 'text-sm'
+            }`}
             data-testid="rgb-value"
           >
             {colorInfo.rgb.r}, {colorInfo.rgb.g}, {colorInfo.rgb.b}
@@ -98,11 +126,15 @@ export const ColorInfoPanel: React.FC<ColorInfoPanelProps> = ({
 
         {/* HSL values */}
         <div className="flex justify-between items-center">
-          <span className="text-xs font-medium text-gray-600 uppercase tracking-wide">
+          <span className={`font-medium text-gray-600 uppercase tracking-wide ${
+            isMobile ? 'text-xs' : 'text-xs'
+          }`}>
             HSL
           </span>
           <code 
-            className="text-sm font-mono bg-gray-100 px-2 py-1 rounded text-gray-900"
+            className={`font-mono bg-gray-100 px-2 py-1 rounded text-gray-900 ${
+              isMobile ? 'text-xs' : 'text-sm'
+            }`}
             data-testid="hsl-value"
           >
             {Math.round(colorInfo.hsl.h)}°, {Math.round(colorInfo.hsl.s)}%, {Math.round(colorInfo.hsl.l)}%

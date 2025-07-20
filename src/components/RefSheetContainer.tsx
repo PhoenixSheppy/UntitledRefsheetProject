@@ -97,8 +97,51 @@ export const RefSheetContainer: React.FC<RefSheetContainerProps> = ({
     }
   }, [imageDimensions, updateDisplayDimensions, updateContainerDimensions]);
 
-  // Handle segment hover
+  // Detect if device is mobile
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkIsMobile = () => {
+      const hasTouchScreen = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+      const isSmallScreen = window.innerWidth < 768; // md breakpoint
+      setIsMobile(hasTouchScreen && isSmallScreen);
+    };
+
+    checkIsMobile();
+    window.addEventListener('resize', checkIsMobile);
+    
+    return () => window.removeEventListener('resize', checkIsMobile);
+  }, []);
+
+  // Handle segment hover (for desktop)
   const handleSegmentHover = useCallback((segment: ColorSegment | null) => {
+    if (!isMobile) {
+      setActiveSegment(segment);
+      
+      if (segment && displayDimensions) {
+        // Calculate segment bounds in display coordinates
+        const segmentBounds: SegmentBounds = {
+          x: (segment.coordinates.x / 100) * displayDimensions.width,
+          y: (segment.coordinates.y / 100) * displayDimensions.height,
+          width: (segment.dimensions.width / 100) * displayDimensions.width,
+          height: (segment.dimensions.height / 100) * displayDimensions.height,
+        };
+        
+        // Calculate panel position
+        const position = calculatePanelPosition(
+          segmentBounds,
+          containerDimensions,
+          preferredPanelSide,
+          isMobile
+        );
+        
+        setPanelPosition(position);
+      }
+    }
+  }, [displayDimensions, containerDimensions, preferredPanelSide, isMobile]);
+
+  // Handle segment touch (for mobile)
+  const handleSegmentTouch = useCallback((segment: ColorSegment | null) => {
     setActiveSegment(segment);
     
     if (segment && displayDimensions) {
@@ -110,16 +153,17 @@ export const RefSheetContainer: React.FC<RefSheetContainerProps> = ({
         height: (segment.dimensions.height / 100) * displayDimensions.height,
       };
       
-      // Calculate panel position
+      // Calculate panel position with mobile-specific logic
       const position = calculatePanelPosition(
         segmentBounds,
         containerDimensions,
-        preferredPanelSide
+        preferredPanelSide,
+        isMobile
       );
       
       setPanelPosition(position);
     }
-  }, [displayDimensions, containerDimensions, preferredPanelSide]);
+  }, [displayDimensions, containerDimensions, preferredPanelSide, isMobile]);
 
   // Responsive panel dimensions
   const responsivePanelDimensions = useMemo(() => {
@@ -132,7 +176,11 @@ export const RefSheetContainer: React.FC<RefSheetContainerProps> = ({
   return (
     <div 
       ref={containerRef}
-      className={`relative w-full max-w-4xl mx-auto ${className}`}
+      className={`relative w-full mx-auto ${
+        isMobile 
+          ? 'max-w-full px-2' 
+          : 'max-w-4xl'
+      } ${className}`}
       data-testid="refsheet-container"
     >
       {/* Image container with relative positioning for overlays */}
@@ -155,6 +203,7 @@ export const RefSheetContainer: React.FC<RefSheetContainerProps> = ({
             imageDimensions={imageDimensions}
             displayDimensions={displayDimensions}
             onSegmentHover={handleSegmentHover}
+            onSegmentTouch={handleSegmentTouch}
             activeSegment={activeSegment}
             className="absolute inset-0"
           />
@@ -172,7 +221,7 @@ export const RefSheetContainer: React.FC<RefSheetContainerProps> = ({
       {/* Subtle hint for interactivity */}
       {canRenderOverlays && !activeSegment && (
         <div className="absolute bottom-4 left-4 bg-black bg-opacity-70 text-white text-xs px-3 py-2 rounded-full opacity-60 transition-opacity duration-300 hover:opacity-80">
-          Hover to explore colors
+          {isMobile ? 'Tap to explore colors' : 'Hover to explore colors'}
         </div>
       )}
     </div>

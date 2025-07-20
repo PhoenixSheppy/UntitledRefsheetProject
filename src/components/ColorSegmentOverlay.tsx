@@ -8,6 +8,7 @@ export interface ColorSegmentOverlayProps {
   imageDimensions: ImageDimensions;
   displayDimensions: ImageDimensions;
   onSegmentHover: (segment: ColorSegment | null) => void;
+  onSegmentTouch?: (segment: ColorSegment | null) => void;
   activeSegment: ColorSegment | null;
   className?: string;
 }
@@ -34,13 +35,15 @@ const scaleSegmentCoordinates = (
 };
 
 /**
- * Individual segment overlay component that handles hover interactions
+ * Individual segment overlay component that handles hover and touch interactions
  */
 interface SegmentOverlayItemProps {
   segment: ScaledSegment;
   originalSegment: ColorSegment;
   isActive: boolean;
   onHover: (segment: ColorSegment | null) => void;
+  onTouch: (segment: ColorSegment | null) => void;
+  isMobile: boolean;
 }
 
 const SegmentOverlayItem: React.FC<SegmentOverlayItemProps> = ({
@@ -48,14 +51,32 @@ const SegmentOverlayItem: React.FC<SegmentOverlayItemProps> = ({
   originalSegment,
   isActive,
   onHover,
+  onTouch,
+  isMobile,
 }) => {
   const handleMouseEnter = useCallback(() => {
-    onHover(originalSegment);
-  }, [originalSegment, onHover]);
+    if (!isMobile) {
+      onHover(originalSegment);
+    }
+  }, [originalSegment, onHover, isMobile]);
 
   const handleMouseLeave = useCallback(() => {
-    onHover(null);
-  }, [onHover]);
+    if (!isMobile) {
+      onHover(null);
+    }
+  }, [onHover, isMobile]);
+
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    e.preventDefault();
+    onTouch(isActive ? null : originalSegment);
+  }, [originalSegment, onTouch, isActive]);
+
+  const handleClick = useCallback((e: React.MouseEvent) => {
+    if (isMobile) {
+      e.preventDefault();
+      onTouch(isActive ? null : originalSegment);
+    }
+  }, [originalSegment, onTouch, isActive, isMobile]);
 
   const baseStyles = {
     position: 'absolute' as const,
@@ -91,6 +112,8 @@ const SegmentOverlayItem: React.FC<SegmentOverlayItemProps> = ({
       }}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
+      onTouchStart={handleTouchStart}
+      onClick={handleClick}
       role="button"
       tabIndex={0}
       aria-label={`Color segment: ${segment.name}`}
@@ -100,21 +123,56 @@ const SegmentOverlayItem: React.FC<SegmentOverlayItemProps> = ({
 };
 
 /**
+ * Hook to detect if the device supports touch
+ */
+const useIsMobile = () => {
+  const [isMobile, setIsMobile] = React.useState(false);
+
+  React.useEffect(() => {
+    const checkIsMobile = () => {
+      const hasTouchScreen = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+      const isSmallScreen = window.innerWidth < 768; // md breakpoint
+      setIsMobile(hasTouchScreen && isSmallScreen);
+    };
+
+    checkIsMobile();
+    window.addEventListener('resize', checkIsMobile);
+    
+    return () => window.removeEventListener('resize', checkIsMobile);
+  }, []);
+
+  return isMobile;
+};
+
+/**
  * ColorSegmentOverlay component that renders interactive areas over the reference sheet image
- * Handles hover detection, coordinate scaling, and visual feedback
+ * Handles hover detection, coordinate scaling, touch interactions, and visual feedback
  */
 export const ColorSegmentOverlay: React.FC<ColorSegmentOverlayProps> = ({
   segments,
   imageDimensions,
   displayDimensions,
   onSegmentHover,
+  onSegmentTouch,
   activeSegment,
   className = '',
 }) => {
+  const isMobile = useIsMobile();
+
   // Scale all segments based on display dimensions
   const scaledSegments = useMemo(() => {
     return segments.map(segment => scaleSegmentCoordinates(segment, displayDimensions));
   }, [segments, displayDimensions]);
+
+  // Handle touch interactions
+  const handleTouch = useCallback((segment: ColorSegment | null) => {
+    if (onSegmentTouch) {
+      onSegmentTouch(segment);
+    } else {
+      // Fallback to hover handler if no touch handler provided
+      onSegmentHover(segment);
+    }
+  }, [onSegmentTouch, onSegmentHover]);
 
   // Container styles to match the image dimensions exactly
   const containerStyles = {
@@ -142,6 +200,8 @@ export const ColorSegmentOverlay: React.FC<ColorSegmentOverlayProps> = ({
             originalSegment={segments[index]}
             isActive={activeSegment?.id === segment.id}
             onHover={onSegmentHover}
+            onTouch={handleTouch}
+            isMobile={isMobile}
           />
         </div>
       ))}

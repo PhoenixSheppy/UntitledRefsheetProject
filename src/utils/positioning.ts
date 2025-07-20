@@ -25,10 +25,16 @@ const SEGMENT_PANEL_GAP = 12;
 export function calculatePanelPosition(
   segmentBounds: SegmentBounds,
   containerDimensions: Dimensions,
-  preferredSide: 'left' | 'right' | 'auto' = 'auto'
+  preferredSide: 'left' | 'right' | 'auto' = 'auto',
+  isMobile: boolean = false
 ): PanelPosition {
-  const panelWidth = PANEL_DIMENSIONS.width;
-  const panelHeight = PANEL_DIMENSIONS.height;
+  // Use responsive panel dimensions for mobile
+  const panelDimensions = isMobile 
+    ? getResponsivePanelDimensions(containerDimensions.width)
+    : PANEL_DIMENSIONS;
+  
+  const panelWidth = panelDimensions.width;
+  const panelHeight = panelDimensions.height;
   
   // Calculate segment center
   const segmentCenterX = segmentBounds.x + segmentBounds.width / 2;
@@ -59,15 +65,27 @@ export function calculatePanelPosition(
       { side: 'top' as const, space: spaceTop },
     ].sort((a, b) => b.space - a.space);
     
-    // Prefer horizontal positioning if there's enough space
-    if (horizontalSpaces[0].space >= panelWidth + SEGMENT_PANEL_GAP + EDGE_PADDING) {
-      bestSide = horizontalSpaces[0].side;
-    } else if (verticalSpaces[0].space >= panelHeight + SEGMENT_PANEL_GAP + EDGE_PADDING) {
-      bestSide = verticalSpaces[0].side;
+    if (isMobile) {
+      // On mobile, prefer vertical positioning (especially bottom) for better accessibility
+      if (verticalSpaces[0].space >= panelHeight + SEGMENT_PANEL_GAP + EDGE_PADDING) {
+        bestSide = verticalSpaces[0].side;
+      } else if (horizontalSpaces[0].space >= panelWidth + SEGMENT_PANEL_GAP + EDGE_PADDING) {
+        bestSide = horizontalSpaces[0].side;
+      } else {
+        // Fallback to bottom positioning on mobile for better thumb accessibility
+        bestSide = 'bottom';
+      }
     } else {
-      // Fallback to the side with the most space, even if it might overflow
-      const allSpaces = [...horizontalSpaces, ...verticalSpaces].sort((a, b) => b.space - a.space);
-      bestSide = allSpaces[0].side;
+      // On desktop, prefer horizontal positioning if there's enough space
+      if (horizontalSpaces[0].space >= panelWidth + SEGMENT_PANEL_GAP + EDGE_PADDING) {
+        bestSide = horizontalSpaces[0].side;
+      } else if (verticalSpaces[0].space >= panelHeight + SEGMENT_PANEL_GAP + EDGE_PADDING) {
+        bestSide = verticalSpaces[0].side;
+      } else {
+        // Fallback to the side with the most space, even if it might overflow
+        const allSpaces = [...horizontalSpaces, ...verticalSpaces].sort((a, b) => b.space - a.space);
+        bestSide = allSpaces[0].side;
+      }
     }
   }
   
