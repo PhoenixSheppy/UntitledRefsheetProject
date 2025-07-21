@@ -2,36 +2,26 @@ import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import '@/styles/globals.css'
 import { WebSiteStructuredData } from '@/components/StructuredData'
+import { seoConfig } from '@/config/seo'
 
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
   title: {
-    default: 'Interactive Character Reference Sheet',
-    template: '%s | Interactive Character Reference Sheet',
+    default: seoConfig.title,
+    template: `%s | ${seoConfig.siteName}`,
   },
-  description: 'Explore character design with interactive color mapping. Hover over different areas to discover detailed color information including hex, RGB, and HSL values.',
-  keywords: [
-    'character design',
-    'reference sheet',
-    'color palette',
-    'interactive',
-    'character art',
-    'color mapping',
-    'digital art',
-    'character development',
-    'art portfolio',
-    'color theory'
-  ],
-  authors: [{ name: 'Character Artist' }],
-  creator: 'Character Artist',
-  publisher: 'Interactive Character Reference Sheet',
+  description: seoConfig.description,
+  keywords: seoConfig.keywords,
+  authors: [{ name: seoConfig.author }],
+  creator: seoConfig.author,
+  publisher: seoConfig.siteName,
   formatDetection: {
     email: false,
     address: false,
     telephone: false,
   },
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'),
+  metadataBase: new URL(seoConfig.siteUrl),
   alternates: {
     canonical: '/',
   },
@@ -48,20 +38,20 @@ export const metadata: Metadata = {
   },
   openGraph: {
     type: 'website',
-    locale: 'en_US',
+    locale: seoConfig.locale,
     url: '/',
-    title: 'Interactive Character Reference Sheet',
-    description: 'Explore character design with interactive color mapping. Discover detailed color information by hovering over different areas of the character artwork.',
-    siteName: 'Interactive Character Reference Sheet',
+    title: seoConfig.title,
+    description: seoConfig.description,
+    siteName: seoConfig.siteName,
     images: [
       {
-        url: '/images/og-image.jpg',
+        url: seoConfig.images.og,
         width: 1200,
         height: 630,
         alt: 'Interactive Character Reference Sheet Preview',
       },
       {
-        url: '/images/og-image-square.jpg',
+        url: seoConfig.images.ogSquare,
         width: 1200,
         height: 1200,
         alt: 'Interactive Character Reference Sheet Square Preview',
@@ -70,10 +60,10 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Interactive Character Reference Sheet',
-    description: 'Explore character design with interactive color mapping',
-    images: ['/images/twitter-image.jpg'],
-    creator: '@characterartist',
+    title: seoConfig.title,
+    description: seoConfig.description,
+    images: [seoConfig.images.twitter],
+    creator: seoConfig.twitterHandle,
   },
   verification: {
     google: process.env.NEXT_PUBLIC_GOOGLE_VERIFICATION,
@@ -81,6 +71,17 @@ export const metadata: Metadata = {
     yahoo: process.env.NEXT_PUBLIC_YAHOO_VERIFICATION,
   },
   category: 'Art & Design',
+  other: {
+    'theme-color': '#ffffff',
+    'color-scheme': 'light',
+    'mobile-web-app-capable': 'yes',
+    'apple-mobile-web-app-capable': 'yes',
+    'apple-mobile-web-app-status-bar-style': 'default',
+    'apple-mobile-web-app-title': seoConfig.siteName,
+    'application-name': seoConfig.siteName,
+    'msapplication-TileColor': '#ffffff',
+    'msapplication-config': '/browserconfig.xml',
+  },
 }
 
 export default function RootLayout({

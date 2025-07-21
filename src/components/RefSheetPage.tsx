@@ -220,6 +220,29 @@ export const RefSheetPage: React.FC<RefSheetPageProps> = ({
           </div>
         </section>
       )}
+
+      {/* Developer Tools Link */}
+      <section className="text-center">
+        <Card className="bg-blue-50 border-blue-200 max-w-md mx-auto">
+          <div className="space-y-3">
+            <h3 className="font-medium text-blue-800">
+              Colors don't match your image?
+            </h3>
+            <p className="text-sm text-blue-700">
+              Use our automatic color extraction tool to generate an accurate color palette from your reference image.
+            </p>
+            <a
+              href="/dev-tools"
+              className="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 transition-colors"
+            >
+              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zM21 5a2 2 0 00-2-2h-4a2 2 0 00-2 2v6a4 4 0 004 4h4V5z" />
+              </svg>
+              Auto-Extract Colors
+            </a>
+          </div>
+        </Card>
+      </section>
     </div>
   );
 };

@@ -1,7 +1,8 @@
 import { Metadata } from 'next'
 import { RefSheetPage } from '@/components/RefSheetPage'
 import { sampleRefSheetConfig } from '@/config/sampleRefSheet'
-import { ArtworkStructuredData } from '@/components/StructuredData'
+import { AllStructuredData } from '@/components/StructuredData'
+import { seoConfig } from '@/config/seo'
 
 export const metadata: Metadata = {
   title: 'Character Reference Sheet - Interactive Color Explorer',
@@ -25,7 +26,7 @@ export const metadata: Metadata = {
     url: '/',
     images: [
       {
-        url: '/images/character-refsheet-preview.jpg',
+        url: seoConfig.images.og,
         width: 1200,
         height: 630,
         alt: 'Interactive Character Reference Sheet with Color Mapping',
@@ -36,14 +37,14 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'Interactive Character Reference Sheet',
     description: 'Explore character colors interactively - hover to discover hex, RGB, and HSL values',
-    images: ['/images/character-refsheet-twitter.jpg'],
+    images: [seoConfig.images.twitter],
   },
 }
 
 export default function HomePage() {
   return (
     <>
-      <ArtworkStructuredData />
+      <AllStructuredData />
       <main className="min-h-screen bg-gradient-to-br from-neutral-50 to-neutral-100">
         <div className="container mx-auto px-4 py-8">
           <RefSheetPage 

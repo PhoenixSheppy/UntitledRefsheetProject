@@ -6,11 +6,11 @@ import { createRefSheetConfig, createColorSegment } from '@/utils/config';
  * This demonstrates how to set up interactive color segments
  */
 export const sampleRefSheetConfig: RefSheetConfig = createRefSheetConfig(
-  // Using a placeholder image URL - in production this would be your actual character reference sheet
-  'https://via.placeholder.com/800x600/f0f0f0/666666?text=Character+Reference+Sheet',
-  'Sample character reference sheet for interactive color exploration',
-  800, // Original image width
-  600, // Original image height
+  // Using the actual Phoenix character reference sheet
+  '/images/PhoenixShepRef.png',
+  'Phoenix character reference sheet for interactive color exploration',
+  800, // Original image width - adjust based on your actual image dimensions
+  600, // Original image height - adjust based on your actual image dimensions
   [
     // Sample color segments - these would be positioned over actual character features
     createColorSegment(

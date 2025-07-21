@@ -54,7 +54,7 @@ export function requestAnimationFramePolyfill(callback: () => void): number {
   if (typeof window !== 'undefined' && window.requestAnimationFrame) {
     return window.requestAnimationFrame(callback);
   }
-  return setTimeout(callback, 16); // ~60fps fallback
+  return setTimeout(callback, 16) as unknown as number; // ~60fps fallback
 }
 
 /**

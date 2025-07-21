@@ -1,81 +1,134 @@
 /**
- * Image optimization utilities for reference sheet assets
+ * Image optimization utilities for production deployment
  */
 
 export interface ImageOptimizationConfig {
   quality: number;
   format: 'webp' | 'avif' | 'jpeg' | 'png';
-  sizes: number[];
+  sizes: string;
   priority: boolean;
-}
-
-export const REFERENCE_SHEET_OPTIMIZATION: ImageOptimizationConfig = {
-  quality: 90,
-  format: 'webp',
-  sizes: [640, 828, 1200, 1920, 2048],
-  priority: true,
-};
-
-export const THUMBNAIL_OPTIMIZATION: ImageOptimizationConfig = {
-  quality: 80,
-  format: 'webp',
-  sizes: [128, 256, 384],
-  priority: false,
-};
-
-/**
- * Generate responsive image sizes for Next.js Image component
- */
-export function generateImageSizes(config: ImageOptimizationConfig): string {
-  return config.sizes
-    .map((size, index) => {
-      if (index === config.sizes.length - 1) {
-        return `${size}px`;
-      }
-      return `(max-width: ${size}px) ${size}px`;
-    })
-    .join(', ');
+  placeholder?: 'blur' | 'empty';
+  blurDataURL?: string;
 }
 
 /**
- * Get optimized image props for Next.js Image component
+ * Get optimized image configuration for reference sheets
  */
-export function getOptimizedImageProps(
-  src: string,
-  alt: string,
-  config: ImageOptimizationConfig = REFERENCE_SHEET_OPTIMIZATION
-) {
+export function getRefSheetImageConfig(): ImageOptimizationConfig {
   return {
-    src,
-    alt,
-    quality: config.quality,
-    priority: config.priority,
-    sizes: generateImageSizes(config),
-    style: {
-      width: '100%',
-      height: 'auto',
-    },
+    quality: 85,
+    format: 'webp',
+    sizes: '(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 1200px',
+    priority: true,
+    placeholder: 'blur',
+    blurDataURL: generateBlurDataURL(),
   };
+}
+
+/**
+ * Generate a blur data URL for image placeholders
+ */
+function generateBlurDataURL(): string {
+  // Simple 1x1 pixel blur placeholder
+  return 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGRkqGx0f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R//2Q==';
+}
+
+/**
+ * Get responsive image sizes for different breakpoints
+ */
+export function getResponsiveImageSizes(): string {
+  return [
+    '(max-width: 640px) 100vw',
+    '(max-width: 768px) 90vw',
+    '(max-width: 1024px) 80vw',
+    '(max-width: 1280px) 70vw',
+    '1200px'
+  ].join(', ');
 }
 
 /**
  * Preload critical images for better performance
  */
-export function preloadImage(src: string, as: 'image' = 'image'): void {
-  if (typeof window !== 'undefined') {
+export function preloadCriticalImages(imageUrls: string[]): void {
+  if (typeof window === 'undefined') return;
+
+  imageUrls.forEach(url => {
     const link = document.createElement('link');
     link.rel = 'preload';
-    link.as = as;
-    link.href = src;
+    link.as = 'image';
+    link.href = url;
+    link.type = 'image/webp';
     document.head.appendChild(link);
-  }
+  });
 }
 
 /**
  * Generate srcSet for responsive images
  */
-export function generateSrcSet(baseSrc: string, sizes: number[]): string {
+export function generateSrcSet(baseUrl: string, sizes: number[]): string {
   return sizes
-    .map(size => `${baseSrc}?w=${size} ${size}w`)
+    .map(size => `${baseUrl}?w=${size}&q=85 ${size}w`)
     .join(', ');
+}
+
+/**
+ * Image loading performance monitoring
+ */
+export function monitorImageLoading(imageElement: HTMLImageElement): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const startTime = performance.now();
+    
+    const onLoad = () => {
+      const loadTime = performance.now() - startTime;
+      console.log(`Image loaded in ${loadTime.toFixed(2)}ms`);
+      cleanup();
+      resolve();
+    };
+    
+    const onError = () => {
+      console.error('Image failed to load');
+      cleanup();
+      reject(new Error('Image load failed'));
+    };
+    
+    const cleanup = () => {
+      imageElement.removeEventListener('load', onLoad);
+      imageElement.removeEventListener('error', onError);
+    };
+    
+    if (imageElement.complete) {
+      onLoad();
+    } else {
+      imageElement.addEventListener('load', onLoad);
+      imageElement.addEventListener('error', onError);
+    }
+  });
+}
+
+/**
+ * Lazy loading intersection observer for images
+ */
+export function createImageLazyLoader(): IntersectionObserver | null {
+  if (typeof window === 'undefined' || !window.IntersectionObserver) {
+    return null;
+  }
+  
+  return new IntersectionObserver(
+    (entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          const img = entry.target as HTMLImageElement;
+          const src = img.dataset.src;
+          if (src) {
+            img.src = src;
+            img.removeAttribute('data-src');
+          }
+        }
+      });
+    },
+    {
+      rootMargin: '50px 0px',
+      threshold: 0.01
+    }
+  );
 }

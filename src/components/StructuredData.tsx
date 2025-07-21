@@ -2,75 +2,51 @@
  * Structured Data component for SEO optimization
  */
 
+import { 
+  generateWebsiteStructuredData, 
+  generateArtworkStructuredData, 
+  generateBreadcrumbStructuredData,
+  generateFAQStructuredData 
+} from '@/config/seo';
+
 interface StructuredDataProps {
-  type: 'WebSite' | 'CreativeWork' | 'VisualArtwork';
   data: Record<string, any>;
 }
 
-export function StructuredData({ type, data }: StructuredDataProps) {
-  const structuredData = {
-    '@context': 'https://schema.org',
-    '@type': type,
-    ...data,
-  };
-
+export function StructuredData({ data }: StructuredDataProps) {
   return (
     <script
       type="application/ld+json"
       dangerouslySetInnerHTML={{
-        __html: JSON.stringify(structuredData, null, 2),
+        __html: JSON.stringify(data, null, 2),
       }}
     />
   );
 }
 
 export function WebSiteStructuredData() {
-  return (
-    <StructuredData
-      type="WebSite"
-      data={{
-        name: 'Interactive Character Reference Sheet',
-        description: 'Explore character design with interactive color mapping',
-        url: process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000',
-        potentialAction: {
-          '@type': 'SearchAction',
-          target: {
-            '@type': 'EntryPoint',
-            urlTemplate: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}?q={search_term_string}`,
-          },
-          'query-input': 'required name=search_term_string',
-        },
-      }}
-    />
-  );
+  return <StructuredData data={generateWebsiteStructuredData()} />;
 }
 
 export function ArtworkStructuredData() {
+  return <StructuredData data={generateArtworkStructuredData()} />;
+}
+
+export function BreadcrumbStructuredData() {
+  return <StructuredData data={generateBreadcrumbStructuredData()} />;
+}
+
+export function FAQStructuredData() {
+  return <StructuredData data={generateFAQStructuredData()} />;
+}
+
+export function AllStructuredData() {
   return (
-    <StructuredData
-      type="VisualArtwork"
-      data={{
-        name: 'Interactive Character Reference Sheet',
-        description: 'Character reference sheet with interactive color exploration',
-        creator: {
-          '@type': 'Person',
-          name: 'Character Artist',
-        },
-        artMedium: 'Digital Art',
-        artworkSurface: 'Digital Canvas',
-        genre: 'Character Design',
-        keywords: [
-          'character design',
-          'reference sheet',
-          'color palette',
-          'interactive art',
-          'digital illustration',
-        ],
-        image: '/images/character-refsheet-preview.jpg',
-        url: process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000',
-        dateCreated: new Date().toISOString().split('T')[0],
-        license: 'All rights reserved',
-      }}
-    />
+    <>
+      <WebSiteStructuredData />
+      <ArtworkStructuredData />
+      <BreadcrumbStructuredData />
+      <FAQStructuredData />
+    </>
   );
 }

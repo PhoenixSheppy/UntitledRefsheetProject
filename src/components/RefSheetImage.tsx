@@ -3,6 +3,7 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import Image from 'next/image';
 import { ImageDimensions } from '@/types';
+import { getRefSheetImageConfig, monitorImageLoading } from '@/utils/imageOptimization';
 
 export interface RefSheetImageProps {
   src: string;
@@ -30,9 +31,20 @@ export const RefSheetImage: React.FC<RefSheetImageProps> = ({
   });
   
   const imageRef = useRef<HTMLImageElement>(null);
+  const imageConfig = getRefSheetImageConfig();
 
-  const handleImageLoad = useCallback((event: React.SyntheticEvent<HTMLImageElement>) => {
+  const handleImageLoad = useCallback(async (event: React.SyntheticEvent<HTMLImageElement>) => {
     const img = event.currentTarget;
+    
+    // Monitor image loading performance in production
+    if (process.env.NODE_ENV === 'production') {
+      try {
+        await monitorImageLoading(img);
+      } catch (error) {
+        console.warn('Image performance monitoring failed:', error);
+      }
+    }
+    
     const dimensions: ImageDimensions = {
       width: img.naturalWidth,
       height: img.naturalHeight
@@ -112,16 +124,17 @@ export const RefSheetImage: React.FC<RefSheetImageProps> = ({
         alt={alt}
         width={0}
         height={0}
-        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 1200px"
+        sizes={imageConfig.sizes}
         className={`w-full h-auto max-w-full object-contain transition-opacity duration-300 ${
           state.isLoading ? 'opacity-0' : 'opacity-100'
         }`}
         onLoad={handleImageLoad}
         onError={handleImageError}
-        priority
-        quality={90}
-        placeholder="blur"
-        blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k="
+        priority={imageConfig.priority}
+        quality={imageConfig.quality}
+        placeholder={imageConfig.placeholder}
+        blurDataURL={imageConfig.blurDataURL}
+        unoptimized={false}
         style={{
           aspectRatio: state.dimensions 
             ? `${state.dimensions.width} / ${state.dimensions.height}` 
